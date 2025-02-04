@@ -67,7 +67,7 @@ class VideoProcessor:
             frame_path = os.path.join(self.keyframes_dir, keyframe)
             frame = cv2.imread(frame_path)
             if frame is not None:
-                frame_num = int(keyframe.split('_')[1].split('.')[0])
+                frame_num = int(keyframe.split('.')[0])
                 self.process_frame(frame_num, frame, model_handler)
         
     def open_video(self) -> bool:

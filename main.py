@@ -5,11 +5,13 @@ from model_handler import ModelHandler
 import os
 
 if os.name == 'nt':
-    temp_path = r'vips-dev-8.16\bin'
+    vips_path = r'vips-dev-8.16\bin' 
+    ffmpeg_path = r'ffmpeg-7.1-essentials_build\bin'
     current_path = os.path.dirname(os.path.abspath(__file__))
-    temp_path = os.path.join(current_path, temp_path)
+    vips_path = os.path.join(current_path, vips_path)
+    ffmpeg_path = os.path.join(current_path, ffmpeg_path)
 
-    os.environ['PATH'] = temp_path + os.pathsep + os.environ.get('PATH', '')
+    os.environ['PATH'] = vips_path + os.pathsep + ffmpeg_path + os.pathsep + os.environ.get('PATH', '')
 
 
 def process_single_video(video_path: str, model_handler: ModelHandler):
