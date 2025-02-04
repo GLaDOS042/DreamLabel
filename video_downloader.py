@@ -4,10 +4,13 @@ import yt_dlp
 
 def download_video(url: str | list, output_path: str) -> None:
 
+    if url is None or url == "" or len(url) == 0:
+        return
+
     if os.path.exists(output_path):
         print(f"Video already exists at {output_path}")
         return
-
+    
     with tqdm(total=0, unit='B', unit_scale=True, desc="Downloading video") as pbar:
         def progress_hook(d):
             if d['status'] != 'downloading':

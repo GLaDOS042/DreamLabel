@@ -2,7 +2,7 @@ import os
 
 # Video settings
 VIDEO_PATH = "Video"
-YOUTUBE_URL = ["https://www.youtube.com/watch?v=jiZm337SueE"]
+YOUTUBE_URL = ["https://www.youtube.com/watch?v=jiZm337SueE"] #keep it empty if no need to download video
 SAVE_DIR = "box"
 BATCH_SIZE = 20
 
