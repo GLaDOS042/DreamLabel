@@ -1,6 +1,6 @@
 import cv2
 from tqdm import tqdm
-from typing import Generator, Tuple, List
+from typing import Generator, Tuple, List, Dict
 import subprocess
 import os
 from config import *
@@ -11,9 +11,11 @@ class VideoProcessor:
         self.video_path = video_path
         self.cap = None
         self.total_frames = 0
-        self.keyframes_dir = os.path.join(os.path.dirname(video_path), 'keyframes', os.path.splitext(os.path.basename(video_path))[0])
+        self.keyframes_dir = os.path.join(os.path.dirname(video_path), 'keyframes', get_video_name(video_path))
+        self.annotations = create_coco_annotation_base()
+        self.annotation_id = 1
         
-    def extract_keyframes(self, scene_threshold: float = 0.3) -> bool:
+    def extract_keyframes(self) -> bool:
         """Extract keyframes from video using FFmpeg with scene detection
         
         Args:
@@ -22,16 +24,17 @@ class VideoProcessor:
         """
         try:
             # Create directory for saving keyframes
-            os.makedirs(self.keyframes_dir, exist_ok=True)
+            create_directory(self.keyframes_dir)
             
             # Build FFmpeg command to extract keyframes using both I-frames and scene detection
             cmd = [
-                'ffmpeg', '-i', self.video_path,
-                '-vf', f"select='eq(pict_type,I) + gt(scene,{scene_threshold})'",
+
+                'ffmpeg', '-i', f"{self.video_path}",
+                '-vf', f"select='eq(pict_type,I) + gt(scene,{SCENE_THRESHOLD})'",
                 '-vsync', '0',
                 '-frame_pts', '1',
                 '-q:v', '2',  # High quality JPEG
-                os.path.join(self.keyframes_dir, '%d.jpg')
+                f"{os.path.join(self.keyframes_dir, '%d.jpg')}"
             ]
             
             # Execute FFmpeg command
@@ -46,7 +49,7 @@ class VideoProcessor:
             if not keyframes:
                 print("No keyframes were extracted. Trying with lower scene threshold...")
                 # Retry with lower threshold if no frames were extracted
-                return self.extract_keyframes(scene_threshold=max(0.1, scene_threshold - 0.1))
+                return self.extract_keyframes(scene_threshold=max(0.1, SCENE_THRESHOLD - 0.1))
                 
             print(f"Successfully extracted {len(keyframes)} keyframes to: {self.keyframes_dir}")
             return True
@@ -67,7 +70,7 @@ class VideoProcessor:
             frame_path = os.path.join(self.keyframes_dir, keyframe)
             frame = cv2.imread(frame_path)
             if frame is not None:
-                frame_num = int(keyframe.split('_')[1].split('.')[0])
+                frame_num = int(keyframe.split('.')[0])
                 self.process_frame(frame_num, frame, model_handler)
         
     def open_video(self) -> bool:
@@ -111,13 +114,30 @@ class VideoProcessor:
                     frame_batch = []
                     
     def process_frame(self, frame_num: int, frame, model_handler) -> None:
-
         pil_image = cv2_to_pil(frame)
         detection_results = model_handler.detect_objects(pil_image, DETECTION_OBJECT)
         
         if not detection_results:
             return
-            
-        image_with_boxes = draw_boxes(pil_image, detection_results)
-        save_path = save_frame(self.video_path, image_with_boxes, frame_num)
-        # print(f"Saved processed frame {frame_num} to {save_path}")
+
+        # Add image info to COCO annotations
+        self.annotations["images"].append(create_image_info(frame_num, pil_image))
+
+        # Add detection results to COCO annotations
+        for obj in detection_results:
+            if all(key in obj for key in ("x_min", "y_min", "x_max", "y_max")):
+                annotation = create_annotation(
+                    self.annotation_id,
+                    frame_num,
+                    obj,
+                    pil_image.size[0],
+                    pil_image.size[1]
+                )
+                self.annotations["annotations"].append(annotation)
+                self.annotation_id += 1
+        if SAVE_FRAME:
+            image_with_boxes = draw_boxes(pil_image, detection_results)
+            save_frame(self.video_path, image_with_boxes, frame_num)
+
+    def save_coco_annotations(self) -> None:
+        save_coco_annotations(self.annotations, self.video_path)

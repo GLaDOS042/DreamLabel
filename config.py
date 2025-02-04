@@ -18,3 +18,6 @@ DEVICE = "cuda"
 DETECTION_OBJECT = "robot"
 BOX_COLOR = "red"
 BOX_WIDTH = 3 
+
+SAVE_FRAME = True
+SCENE_THRESHOLD = 0.3
