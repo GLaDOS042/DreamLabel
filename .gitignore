@@ -177,6 +177,7 @@ pyrightconfig.json
 
 box/
 keyframes/
+annotations/
 
 *.mp4
 vips-dev-8.16/

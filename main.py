@@ -25,6 +25,10 @@ def process_single_video(video_path: str, model_handler: ModelHandler):
         
     # Process keyframes
     processor.process_keyframes(model_handler)
+    
+    # Save COCO format annotations
+    processor.save_coco_annotations()
+    
     print(f"Video keyframe processing completed: {video_path}")
 
 def main():

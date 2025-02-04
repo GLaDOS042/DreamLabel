@@ -2,7 +2,7 @@ import os
 
 # Video settings
 VIDEO_PATH = "Video"
-YOUTUBE_URL = ["https://www.youtube.com/watch?v=jiZm337SueE"]
+YOUTUBE_URL = ["https://www.youtube.com/watch?v=gLCBXi9d_Ao"]
 SAVE_DIR = "box"
 BATCH_SIZE = 20
 
@@ -18,3 +18,6 @@ DEVICE = "cuda"
 DETECTION_OBJECT = "robot"
 BOX_COLOR = "red"
 BOX_WIDTH = 3 
+
+SAVE_FRAME = True
+SCENE_THRESHOLD = 0.3
