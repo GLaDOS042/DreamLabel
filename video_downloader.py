@@ -26,7 +26,7 @@ def download_video(url: str | list, output_path: str) -> None:
 
         ydl_opts = {
             'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-            'outtmpl': os.path.join(os.path.dirname(output_path), '%(title)s.%(ext)s'),
+            'outtmpl': os.path.join(os.path.dirname(output_path), '%(id)s.%(ext)s'),
             'progress_hooks': [progress_hook],
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:

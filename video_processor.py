@@ -11,7 +11,7 @@ class VideoProcessor:
         self.video_path = video_path
         self.cap = None
         self.total_frames = 0
-        self.keyframes_dir = os.path.join(os.path.dirname(video_path), 'keyframes', get_video_name(video_path))
+        self.keyframes_dir = os.path.join( 'keyframes', get_video_name(video_path))
         self.annotations = create_coco_annotation_base()
         self.annotation_id = 1
         
@@ -21,7 +21,9 @@ class VideoProcessor:
         Args:
             scene_threshold (float): Threshold for scene change detection (0.0 to 1.0).
                                    Lower values extract more frames. Default: 0.3
+                                   
         """
+        outputName = os.path.join(self.keyframes_dir, f"{get_video_name(self.video_path)}_%d.jpg")
         try:
             # Create directory for saving keyframes
             create_directory(self.keyframes_dir)
@@ -34,7 +36,9 @@ class VideoProcessor:
                 '-vsync', '0',
                 '-frame_pts', '1',
                 '-q:v', '2',  # High quality JPEG
-                f"{os.path.join(self.keyframes_dir, '%d.jpg')}"
+                outputName
+                # f"{os.path.join(self.keyframes_dir, '%d.jpg')}"
+
             ]
             
             # Execute FFmpeg command
@@ -70,7 +74,7 @@ class VideoProcessor:
             frame_path = os.path.join(self.keyframes_dir, keyframe)
             frame = cv2.imread(frame_path)
             if frame is not None:
-                frame_num = int(keyframe.split('.')[0])
+                frame_num = int(keyframe.split('.')[0].split('_')[-1])
                 self.process_frame(frame_num, frame, model_handler)
         
     def open_video(self) -> bool:

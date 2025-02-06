@@ -58,7 +58,7 @@ def save_frame(video_path: str, image: Image.Image, frame_num: int) -> str:
     save_dir = os.path.join(SAVE_DIR, video_name)
     create_directory(save_dir)
     
-    save_path = os.path.join(save_dir, f"{frame_num:06d}.png")
+    save_path = os.path.join(save_dir, f"{video_name}_{frame_num}.png")
     image.save(save_path)
     return save_path
 

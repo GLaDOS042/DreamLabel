@@ -30,7 +30,7 @@ del ffmpeg-release-essentials.7z
 
 echo Installation complete
 
-echo Please visit https://pytorch.org/get-started/locally/ to install PyTorch with CUDA support
+@REM echo Please visit https://pytorch.org/get-started/locally/ to install PyTorch with CUDA support
 echo Please activate the virtual environment by running "venv\Scripts\activate"
 pause
 
