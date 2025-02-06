@@ -3,6 +3,7 @@ from tqdm import tqdm
 from typing import Generator, Tuple, List, Dict
 import subprocess
 import os
+import json
 from config import *
 from utils import *
 
@@ -11,9 +12,63 @@ class VideoProcessor:
         self.video_path = video_path
         self.cap = None
         self.total_frames = 0
-        self.keyframes_dir = os.path.join( 'keyframes', get_video_name(video_path))
-        self.annotations = create_coco_annotation_base()
-        self.annotation_id = 1
+        self.keyframes_dir = os.path.join('keyframes', get_video_name(video_path))
+        self.annotations = self._load_or_create_annotations()
+        self.annotation_id = self._get_next_annotation_id()
+        self.processed_frames = self._load_progress()
+        self.frames_since_last_save = 0  # 添加計數器追蹤自上次保存後處理的幀數
+        
+    def _load_progress(self) -> set:
+        """Load processing progress from progress file"""
+        progress_file = 'progress.json'
+        video_name = get_video_name(self.video_path)
+        if os.path.exists(progress_file):
+            try:
+                with open(progress_file, 'r') as f:
+                    progress = json.load(f)
+                    return set(progress.get(video_name, []))
+            except Exception as e:
+                print(f"Error loading progress: {e}")
+        return set()
+        
+    def _save_progress(self):
+        """Save processing progress to file"""
+        progress_file = 'progress.json'
+        video_name = get_video_name(self.video_path)
+        
+        # Load existing progress
+        if os.path.exists(progress_file):
+            try:
+                with open(progress_file, 'r') as f:
+                    progress = json.load(f)
+            except:
+                progress = {}
+        else:
+            progress = {}
+            
+        # Update progress for current video
+        progress[video_name] = list(self.processed_frames)
+        
+        # Save updated progress
+        with open(progress_file, 'w') as f:
+            json.dump(progress, f)
+            
+    def _load_or_create_annotations(self) -> Dict:
+        """Load existing annotations or create new ones"""
+        annotation_file = os.path.join('annotations', f"{get_video_name(self.video_path)}_annotations.json")
+        if os.path.exists(annotation_file):
+            try:
+                with open(annotation_file, 'r') as f:
+                    return json.load(f)
+            except Exception as e:
+                print(f"Error loading annotations: {e}")
+        return create_coco_annotation_base()
+        
+    def _get_next_annotation_id(self) -> int:
+        """Get the next available annotation ID"""
+        if not self.annotations["annotations"]:
+            return 1
+        return max(ann["id"] for ann in self.annotations["annotations"]) + 1
         
     def extract_keyframes(self) -> bool:
         """Extract keyframes from video using FFmpeg with scene detection
@@ -72,10 +127,21 @@ class VideoProcessor:
         
         for keyframe in tqdm(keyframes, desc="Processing keyframes"):
             frame_path = os.path.join(self.keyframes_dir, keyframe)
+            frame_num = int(keyframe.split('.')[0].split('_')[-1])
+            
+            # Skip if frame was already processed
+            if frame_num in self.processed_frames:
+                continue
+                
             frame = cv2.imread(frame_path)
             if frame is not None:
-                frame_num = int(keyframe.split('.')[0].split('_')[-1])
                 self.process_frame(frame_num, frame, model_handler)
+                self.processed_frames.add(frame_num)
+        
+        # 確保最後的幀都被保存
+        if self.frames_since_last_save > 0:
+            self.save_coco_annotations()
+            self.frames_since_last_save = 0
         
     def open_video(self) -> bool:
 
@@ -139,9 +205,19 @@ class VideoProcessor:
                 )
                 self.annotations["annotations"].append(annotation)
                 self.annotation_id += 1
+        
+        self.frames_since_last_save += 1
+        
+        # Save annotations every 10 frames or if it's the last frame
+        if self.frames_since_last_save >= 10:
+            self.save_coco_annotations()
+            self.frames_since_last_save = 0
+        
         if SAVE_FRAME:
             image_with_boxes = draw_boxes(pil_image, detection_results)
             save_frame(self.video_path, image_with_boxes, frame_num)
 
     def save_coco_annotations(self) -> None:
+        """Save COCO annotations to file"""
         save_coco_annotations(self.annotations, self.video_path)
+        self._save_progress()  # Save progress along with annotations

@@ -105,7 +105,7 @@ def create_annotation(annotation_id: int, frame_num: int, obj: Dict, image_width
 
 def save_coco_annotations(annotations: Dict, video_path: str) -> None:
     video_name = get_video_name(video_path)
-    annotation_dir = os.path.join(os.path.dirname(video_path), 'annotations')
+    annotation_dir = os.path.join('annotations')
     create_directory(annotation_dir)
     
     annotation_path = os.path.join(annotation_dir, f'{video_name}_annotations.json')

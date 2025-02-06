@@ -183,3 +183,6 @@ annotations/
 vips-dev-8.16/
 ffmpeg-7.1-essentials_build/
 *.zip
+
+Video/
+progress.json
